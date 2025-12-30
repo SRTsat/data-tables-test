@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\User;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -11,37 +12,76 @@ class UserController extends Controller
 {
     public function index()
     {
-        // Mengambil semua data user dari database
         return Inertia::render('UserList', [
-            'users' => User::all() 
+            'users' => User::all()
         ]);
     }
 
     public function destroy($id)
     {
         $user = \App\Models\User::find($id);
-    
+
         if (!$user) {
-        // Ini buat jaga-jaga kalau datanya emang gak ada
-        return back()->with('error', 'User tidak ditemukan');
-    }
+            return back()->with('error', 'User tidak ditemukan');
+        }
 
         $user->delete();
-        return back(); // Inertia akan refresh data secara otomatis
+        return back();
     }
 
-public function bulkDelete(Request $request)
-{
-    // Cek manual: kalau ini muncul di layar, berarti data masuk
-    // return response()->json($request->all()); 
+    public function bulkDelete(Request $request)
+    {
 
-    $ids = $request->ids; // atau $request->input('ids')
+        $ids = $request->ids;
+        if (!empty($ids)) {
+            DB::table('users')->whereIn('id', $ids)->delete();
+        }
 
-    if (!empty($ids)) {
-        // Pakai query builder langsung biar lebih kuat
-        DB::table('users')->whereIn('id', $ids)->delete();
+        return back();
     }
 
-    return back(); 
-}
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'nullable'
+        ]);
+
+        \App\Models\User::create([
+            'name'     => $data['name'],
+            'email'    => $data['email'],
+            'password' => bcrypt('password123'),
+        ]);
+
+        return redirect()->route('users.index')->with('message', 'User berhasil dibuat!');
+    }
+
+    public function create()
+    {
+        return Inertia::render('UserCreate');
+    }
+
+    public function edit($id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+        return Inertia::render('UserEdit', [
+            'user' => $user
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $user = \App\Models\User::findOrFail($id);
+
+        $data = $request->validate([
+            'name'  => 'required|string|max:255',
+            // Validasi email agar unik kecuali untuk email user ini sendiri
+            'email' => 'required|email|unique:users,email,' . $id,
+        ]);
+
+        $user->update($data);
+
+        return redirect()->route('users.index')->with('success', 'Data berhasil diupdate!');
+    }
 }

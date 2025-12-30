@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import $ from 'jquery';
+import { Link } from '@inertiajs/react';
 
 // --- IMPORT CORE ---
 import DataTable from 'datatables.net-react';
@@ -26,7 +27,6 @@ interface UserProps {
 
 export default function UserList({ users }: UserProps) {
     
-    // Handle Hapus Massal (Bulk Delete)
     const handleDeleteSelected = (dt: any) => {
         const selectedData = dt.rows({ selected: true }).data().toArray();
         const ids = selectedData.map((item: any) => item.id);
@@ -40,25 +40,24 @@ if (confirm(`Yakin mau hapus ${ids.length} data ini?`)) {
 }
     };
 
-    // Handle Klik Tombol Hapus per Baris (Event Delegation)
-    useEffect(() => {
-        $(document).on('click', '.btn-delete-row', function (e: JQuery.ClickEvent) {
-            e.preventDefault();
-            
-            // Fix TypeScript 'this' issue
-            const target = $(e.currentTarget);
-            const id = target.data('id');
-            const name = target.data('name');
+    
 
-            if (confirm(`Yakin mau hapus user ${name}?`)) {
-                router.delete(`/users/${id}`, {
-                    onSuccess: () => alert('User berhasil dihapus!'),
-                });
-            }
+
+        useEffect(() => {
+        // Listener untuk Hapus (yang lama)
+        $(document).on('click', '.btn-delete-row', function (e) { /* ... kode hapus ... */ });
+
+        // TAMBAHKAN INI: Listener untuk Edit
+        $(document).on('click', '.btn-edit-row', function (e) {
+            e.preventDefault();
+            const id = $(this).data('id');
+            // Gunakan router.get untuk pindah halaman ke form edit
+            router.get(`/users/${id}/edit`);
         });
 
         return () => {
             $(document).off('click', '.btn-delete-row');
+            $(document).off('click', '.btn-edit-row'); // Jangan lupa cleanup
         };
     }, []);
 
@@ -78,10 +77,18 @@ if (confirm(`Yakin mau hapus ${ids.length} data ini?`)) {
             title: 'Aksi',
             orderable: false,
             render: (data: any) => {
-                return `<button class="btn-delete-row" data-id="${data.id}" data-name="${data.name}" 
-                        style="background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                        Hapus
-                        </button>`;
+                return `
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-edit-row" data-id="${data.id}" 
+                            style="background: #eab308; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                            Edit
+                        </button>
+                        <button class="btn-delete-row" data-id="${data.id}" data-name="${data.name}" 
+                            style="background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                            Hapus
+                        </button>
+                    </div>
+                `;
             }
         }
     ];
@@ -109,7 +116,16 @@ if (confirm(`Yakin mau hapus ${ids.length} data ini?`)) {
                 }
             `}</style>
 
-            <h2 className="mb-4 text-xl font-bold text-white">Data User Real-time</h2>
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white">Data User Real-time</h2>
+                <Link 
+                    href="/users/create" 
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold transition"
+                >
+                    + Tambah User
+                </Link>
+            </div>
+            
             
             <div className="bg-black p-4 shadow rounded text-white">
                 <DataTable 
@@ -123,7 +139,7 @@ if (confirm(`Yakin mau hapus ${ids.length} data ini?`)) {
                         dom: 'lBfrtip',
                         buttons: [
                             {
-                                text: '🗑️ Hapus Terpilih',
+                                text: 'Hapus Terpilih',
                                 className: 'btn-delete-selected',
                                 action: function (e: any, dt: any) {
                                     handleDeleteSelected(dt);

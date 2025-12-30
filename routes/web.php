@@ -17,12 +17,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 });
 
-// Route untuk menampilkan halaman (yang sedang kamu buka)
 Route::get('/users-list', [UserController::class, 'index'])->name('users.index');
 
-// Route untuk hapus SATUAN (PENTING: harus sama dengan URL di React)
 Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 
 Route::post('/users/bulk-delete', [UserController::class, 'bulkDelete']);
+
+Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+
+Route::post('/users', [UserController::class, 'store'])->name('users.store');
+
+Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+
+Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update');
 
 require __DIR__.'/settings.php';
