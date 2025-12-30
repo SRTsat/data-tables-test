@@ -2,8 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
-import 'datatables.net-select-dt'; // WAJIB ADA buat select
+import 'datatables.net-select-dt';
 import $ from 'jquery';
+import Select from 'react-select';
 import 'datatables.net-responsive-dt';
 
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
@@ -11,8 +12,9 @@ import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
 DataTable.use(DT);
 
-export default function UserList({ users }: { users: any[] }) {
-    const tableRef = useRef<any>(null); // Untuk akses instance datatable
+// Tambahkan 'categories' ke props yang diterima dari Controller
+export default function UserList({ users, categories }: { users: any[], categories: any[] }) {
+    const tableRef = useRef<any>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [currentId, setCurrentId] = useState<number | null>(null);
@@ -20,13 +22,39 @@ export default function UserList({ users }: { users: any[] }) {
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
         email: '',
+        category_id: '', // Tambahan field category
     });
+
+    const categoryOptions = categories.map(cat => ({
+        value: cat.name,
+        label: cat.name
+    }));
+
+    // Fungsi Filter DataTables
+    const handleMultiFilter = (selectedOptions: any) => {
+        const dt = tableRef.current.dt();
+        
+        if (!selectedOptions || selectedOptions.length === 0) {
+            // Kalau kosong, tampilkan semua
+            dt.column(4).search('').draw();
+        } else {
+            // Gabungkan pilihan jadi string regex: "Elektronik|Pakaian|Food"
+            const searchValues = selectedOptions.map((opt: any) => opt.value).join('|');
+            
+            // Tembak kolom ke-4 dengan regex aktif
+            dt.column(4).search(searchValues ? `^(${searchValues})$` : '', true, false).draw();
+        }
+    };
 
     const openModal = (user: any = null) => {
         if (user) {
             setEditMode(true);
             setCurrentId(user.id);
-            setData({ name: user.name, email: user.email });
+            setData({ 
+                name: user.name, 
+                email: user.email,
+                category_id: user.category_id || '' 
+            });
         } else {
             setEditMode(false);
             reset();
@@ -43,8 +71,7 @@ export default function UserList({ users }: { users: any[] }) {
             post('/users', { onSuccess: () => setIsOpen(false) });
         }
     };
-
-    // Fungsi Bulk Delete
+    
     const handleBulkDelete = () => {
         const dt = tableRef.current.dt();
         const selectedData = dt.rows({ selected: true }).data().toArray();
@@ -67,16 +94,22 @@ export default function UserList({ users }: { users: any[] }) {
             data: null,
             defaultContent: '',
             orderable: false,
-            className: 'select-checkbox', // Kolom Checkbox
+            className: 'select-checkbox',
             width: '5%'
         },
         { data: 'id', title: 'ID', width: '5%' },
-        { data: 'name', title: 'Nama', width: '30%' },
-        { data: 'email', title: 'Email', width: '30%' },
+        { data: 'name', title: 'Nama', width: '25%' },
+        { data: 'email', title: 'Email', width: '25%' },
+        { 
+            data: 'category.name', 
+            title: 'Kategori', 
+            width: '15%',
+            defaultContent: '<span style="color:#666">No Category</span>'
+        },
         {
             data: null,
             title: 'Aksi',
-            width: '30%',
+            width: '25%',
             orderable: false,
             render: (row: any) => `
                 <div style="display: flex; gap: 8px;">
@@ -97,7 +130,6 @@ export default function UserList({ users }: { users: any[] }) {
             const user = users.find(u => u.id === id);
             if (user) openModal(user);
         };
-
         $(document).on('click', '.btn-delete', onDelete);
         $(document).on('click', '.btn-edit', onEdit);
         return () => {
@@ -117,27 +149,12 @@ export default function UserList({ users }: { users: any[] }) {
                     color: white !important; background: #111 !important; border: 1px solid #333 !important; padding: 6px !important; border-radius: 4px; outline: none;
                 }
                 table.dataTable { width: 100% !important; margin: 20px 0 !important; border-collapse: collapse !important; background: transparent !important; }
-                table.dataTable thead th { 
-                    color: white !important; border-bottom: 2px solid #333 !important; text-align: left !important; padding: 15px 12px !important; background: #0a0a0a !important;
-                }
-                table.dataTable tbody td { 
-                    color: #ccc !important; border-bottom: 1px solid #1a1a1a !important; padding: 12px !important; background: transparent !important;
-                }
-                /* Styling Checkbox Select */
-                table.dataTable tbody td.select-checkbox:before {
-                    border: 1px solid white !important;
-                }
-                table.dataTable tr.selected td.select-checkbox:after {
-                    content: '✓' !important;
-                    margin-top: -11px !important;
-                    margin-left: -4px !important;
-                    text-shadow: none !important;
-                    color: #2563eb !important;
-                }
-                .dataTables_info, .dataTables_paginate { color: #888 !important; margin-top: 15px !important; }
+                table.dataTable thead th { color: white !important; border-bottom: 2px solid #333 !important; text-align: left !important; padding: 15px 12px !important; background: #0a0a0a !important; }
+                table.dataTable tbody td { color: #ccc !important; border-bottom: 1px solid #1a1a1a !important; padding: 12px !important; }
+                table.dataTable tbody td.select-checkbox:before { border: 1px solid white !important; }
             `}</style>
 
-            <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                 <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
                     <Link href="/users-list" style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: 'bold' }}>Users</Link>
                     <Link href="/categories" style={{ color: '#94a3b8', textDecoration: 'none' }}>Categories</Link>
@@ -145,10 +162,52 @@ export default function UserList({ users }: { users: any[] }) {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                     <h2 style={{ fontSize: '28px', fontWeight: 'bold' }}>User Management</h2>
+                    
                     <div style={{ display: 'flex', gap: '10px' }}>
+
                         <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                             Hapus Terpilih
                         </button>
+
+                        {/* MULTI-SELECT FILTER */}
+                        <div style={{ width: '300px', color: 'black' }}>
+                            <Select
+                                isMulti
+                                options={categoryOptions}
+                                placeholder="Filter Kategori..."
+                                onChange={handleMultiFilter}
+                                styles={{
+                                    control: (base) => ({
+                                        ...base,
+                                        background: '#111',
+                                        borderColor: '#333',
+                                        color: 'white',
+                                    }),
+                                    menu: (base) => ({
+                                        ...base,
+                                        background: '#111',
+                                        color: 'white',
+                                    }),
+                                    option: (base, state) => ({
+                                        ...base,
+                                        background: state.isFocused ? '#2563eb' : '#111',
+                                        color: 'white',
+                                    }),
+                                    multiValue: (base) => ({
+                                        ...base,
+                                        background: '#333',
+                                    }),
+                                    multiValueLabel: (base) => ({
+                                        ...base,
+                                        color: 'white',
+                                    }),
+                                    input: (base) => ({
+                                        ...base,
+                                        color: 'white'
+                                    })
+                                }}
+                            />
+                        </div>
                         <button onClick={() => openModal()} style={{ background: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                             + Tambah User
                         </button>
@@ -164,28 +223,41 @@ export default function UserList({ users }: { users: any[] }) {
                         options={{ 
                             responsive: true, 
                             autoWidth: false,
-                            select: { style: 'multi', selector: 'td:first-child' } // AKTIFKAN SELECT
+                            select: { style: 'multi', selector: 'td:first-child' }
                         }} 
                     />
                 </div>
             </div>
 
-            {/* MODAL (Tetap Sama) */}
+            {/* MODAL */}
             {isOpen && (
                 <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
                     <div style={{ background: '#111', padding: '30px', borderRadius: '12px', width: '450px', border: '1px solid #333' }}>
                         <h3 style={{ marginBottom: '20px' }}>{editMode ? 'Edit User' : 'Tambah User'}</h3>
                         <form onSubmit={submit}>
                             <div style={{ marginBottom: '15px' }}>
-                                <label style={{ color: '#aaa' }}>Nama</label>
+                                <label style={{ color: '#aaa', display:'block', marginBottom:'5px' }}>Nama</label>
                                 <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: 'white', borderRadius: '6px' }} />
                             </div>
-                            <div style={{ marginBottom: '25px' }}>
-                                <label style={{ color: '#aaa' }}>Email</label>
+                            <div style={{ marginBottom: '15px' }}>
+                                <label style={{ color: '#aaa', display:'block', marginBottom:'5px' }}>Email</label>
                                 <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: 'white', borderRadius: '6px' }} />
                             </div>
+                            <div style={{ marginBottom: '25px' }}>
+                                <label style={{ color: '#aaa', display:'block', marginBottom:'5px' }}>Pilih Kategori</label>
+                                <select 
+                                    value={data.category_id} 
+                                    onChange={e => setData('category_id', e.target.value)}
+                                    style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: 'white', borderRadius: '6px' }}
+                                >
+                                    <option value="">-- Pilih Kategori --</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
-                                <button type="submit" style={{ flex: 1, background: '#2563eb', color: 'white', padding: '12px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Simpan</button>
+                                <button type="submit" disabled={processing} style={{ flex: 1, background: '#2563eb', color: 'white', padding: '12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Simpan</button>
                                 <button type="button" onClick={() => setIsOpen(false)} style={{ flex: 1, background: '#222', color: 'white', padding: '12px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Batal</button>
                             </div>
                         </form>
