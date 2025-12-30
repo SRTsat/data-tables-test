@@ -3,7 +3,7 @@ import { Head, useForm, Link } from '@inertiajs/react';
 
 export default function UserEdit({ user }: { user: any }) {
     // Inisialisasi form dengan data user yang ada
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors } = useForm<{ name: string; email: string }>({
         name: user.name || '',
         email: user.email || '',
     });

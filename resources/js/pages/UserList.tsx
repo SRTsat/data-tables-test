@@ -1,160 +1,113 @@
 import React, { useEffect } from 'react';
-import { Head, router } from '@inertiajs/react';
-import $ from 'jquery';
-import { Link } from '@inertiajs/react';
-
-// --- IMPORT CORE ---
+import { Head, Link, router } from '@inertiajs/react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
-import 'datatables.net-select-dt';
-import 'datatables.net-select-dt/css/select.dataTables.css';
+import $ from 'jquery';
+import 'datatables.net-responsive-dt';
+// Import CSS dasar DataTable
+import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 
-// --- IMPORT PLUGINS ---
-import 'datatables.net-buttons-dt';
-import 'datatables.net-buttons/js/buttons.html5.mjs';
-import 'datatables.net-dt/css/dataTables.dataTables.css';
-import 'datatables.net-buttons-dt/css/buttons.dataTables.css';
 
-import jszip from 'jszip';
-// @ts-ignore
-window.JSZip = jszip;
 DataTable.use(DT);
 
-// Definisikan tipe data props dari Laravel
-interface UserProps {
-    users: any[];
-}
-
-export default function UserList({ users }: UserProps) {
+export default function UserList({ users }: { users: any[] }) {
     
-    const handleDeleteSelected = (dt: any) => {
-        const selectedData = dt.rows({ selected: true }).data().toArray();
-        const ids = selectedData.map((item: any) => item.id);
-
-        if (ids.length === 0) return alert('Pilih data dulu, bro!');
-
-if (confirm(`Yakin mau hapus ${ids.length} data ini?`)) {
-    router.post('/users/bulk-delete', { ids: ids }, {
-        onSuccess: () => alert('Berhasil!'),
-    });
-}
-    };
-
-    
-
-
-        useEffect(() => {
-        // Listener untuk Hapus (yang lama)
-        $(document).on('click', '.btn-delete-row', function (e) { /* ... kode hapus ... */ });
-
-        // TAMBAHKAN INI: Listener untuk Edit
-        $(document).on('click', '.btn-edit-row', function (e) {
-            e.preventDefault();
-            const id = $(this).data('id');
-            // Gunakan router.get untuk pindah halaman ke form edit
-            router.get(`/users/${id}/edit`);
-        });
-
-        return () => {
-            $(document).off('click', '.btn-delete-row');
-            $(document).off('click', '.btn-edit-row'); // Jangan lupa cleanup
-        };
-    }, []);
-
     const columns = [
-        {
-            data: null,
-            defaultContent: '',
-            orderable: false,
-            className: 'select-checkbox',
-            title: ''
-        },
-        { data: 'id', title: 'ID' },
-        { data: 'name', title: 'Nama' },
-        { data: 'email', title: 'Email' },
+        { data: 'id', title: 'ID', width: '5%' },
+        { data: 'name', title: 'Nama', width: '30%' },
+        { data: 'email', title: 'Email', width: '35%' },
         {
             data: null,
             title: 'Aksi',
+            width: '30%',
             orderable: false,
-            render: (data: any) => {
-                return `
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn-edit-row" data-id="${data.id}" 
-                            style="background: #eab308; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                            Edit
-                        </button>
-                        <button class="btn-delete-row" data-id="${data.id}" data-name="${data.name}" 
-                            style="background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                            Hapus
-                        </button>
-                    </div>
-                `;
-            }
+            render: (data: any) => `
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-edit" data-id="${data.id}" 
+                        style="background: #eab308; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        Edit
+                    </button>
+                    <button class="btn-delete" data-id="${data.id}" 
+                        style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        Hapus
+                    </button>
+                </div>
+            `
         }
     ];
 
+    useEffect(() => {
+        const onDelete = function(this: any) {
+            const id = $(this).data('id');
+            if (confirm('Yakin mau hapus user ini?')) {
+                router.delete(`/users/${id}`);
+            }
+        };
+
+        const onEdit = function(this: any) {
+            const id = $(this).data('id');
+            router.get(`/users/${id}/edit`);
+        };
+
+        $(document).on('click', '.btn-delete', onDelete);
+        $(document).on('click', '.btn-edit', onEdit);
+
+        return () => {
+            $(document).off('click', '.btn-delete', onDelete);
+            $(document).off('click', '.btn-edit', onEdit);
+        };
+    }, []);
+
     return (
-        <div style={{ padding: '20px' }}>
+        <div style={{ padding: '40px', background: '#000', minHeight: '100vh', color: 'white', fontFamily: 'sans-serif' }}>
             <Head title="User Management" />
             
+            {/* CSS Global untuk DataTable Dark Mode */}
             <style>{`
-                .btn-delete-selected {
-                    background-color: #d9534f !important;
-                    color: white !important;
-                    border-color: #d43f3a !important;
-                    margin-bottom: 10px;
+                .dataTables_wrapper { color: white !important; }
+                .dataTables_wrapper .dataTables_length select, 
+                .dataTables_wrapper .dataTables_filter input { 
+                    color: white !important; background: #111 !important; border: 1px solid #333 !important; padding: 6px !important; border-radius: 4px; outline: none;
                 }
-                .btn-delete-selected:hover {
-                    background-color: #c9302c !important;
+                table.dataTable { width: 100% !important; margin: 20px 0 !important; border-collapse: collapse !important; background: transparent !important; }
+                table.dataTable thead th { 
+                    color: white !important; border-bottom: 2px solid #333 !important; text-align: left !important; padding: 15px 12px !important; background: #0a0a0a !important;
                 }
-                table.dataTable tbody td.select-checkbox:before {
-                    border: 1px solid #666 !important;
+                table.dataTable tbody td { 
+                    color: #ccc !important; border-bottom: 1px solid #1a1a1a !important; padding: 12px !important; background: transparent !important;
                 }
-                /* Biar teks info tabel di bawah kelihatan di bg-black */
-                .dataTables_info, .dataTables_paginate {
-                    color: white !important;
-                }
+                .dataTables_info, .dataTables_paginate { color: #888 !important; margin-top: 15px !important; }
+                .dataTables_paginate .paginate_button { color: white !important; }
+                .dataTables_paginate .paginate_button.current { background: #333 !important; border: none !important; color: white !important; }
             `}</style>
 
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">Data User Real-time</h2>
-                <Link 
-                    href="/users/create" 
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold transition"
-                >
-                    + Tambah User
-                </Link>
-            </div>
-            
-            
-            <div className="bg-black p-4 shadow rounded text-white">
-                <DataTable 
-                    data={users} // Sekarang ambil dari props Laravel
-                    columns={columns}
-                    options={{
-                        select: {
-                            style: 'multi',
-                            selector: 'td:first-child'
-                        },
-                        dom: 'lBfrtip',
-                        buttons: [
-                            {
-                                text: 'Hapus Terpilih',
-                                className: 'btn-delete-selected',
-                                action: function (e: any, dt: any) {
-                                    handleDeleteSelected(dt);
-                                }
-                            },
-                            'copy', 'excel', 'pdf'
-                        ],
-                        pageLength: 10,
-                        lengthMenu: [
-                            [10, 15, 20, -1], 
-                            [10, 15, 20, "Semua"] 
-                        ],
-                    }}
-                    className="display w-full"
-                />
+            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
+                    <Link href="/users-list" style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: 'bold', borderBottom: '2px solid #60a5fa' }}>Users</Link>
+                    <Link href="/categories" style={{ color: '#94a3b8', textDecoration: 'none' }}>Categories</Link>
+                </nav>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                    <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>User Management</h2>
+                    <Link 
+                        href="/users/create" 
+                        style={{ background: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold' }}
+                    >
+                        + Tambah User
+                    </Link>
+                </div>
+
+                <div style={{ background: '#050505', padding: '25px', borderRadius: '12px', border: '1px solid #1a1a1a' }}>
+                    <DataTable 
+                        data={users} 
+                        columns={columns} 
+                        className="display"
+                        options={{
+                            responsive: true,
+                            autoWidth: false,
+                        }}
+                    />
+                </div>
             </div>
         </div>
     );
