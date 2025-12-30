@@ -27,4 +27,14 @@ class CategoryController extends Controller
         Category::findOrFail($id)->delete();
         return back();
     }
+
+    public function update(Request $request, $id)
+    {
+        $category = Category::findOrFail($id);
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+        $category->update($data);
+        return back();
+    }
 }

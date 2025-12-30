@@ -31,5 +31,6 @@ Route::put('/users/{id}', [UserController::class, 'update'])->name('users.update
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::post('/categories', [CategoryController::class, 'store']);
 Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+Route::put('/categories/{id}', [CategoryController::class, 'update']);
 
 require __DIR__.'/settings.php';

@@ -54,7 +54,7 @@ class UserController extends Controller
             'password' => bcrypt('password123'),
         ]);
 
-        return redirect()->route('users.index')->with('message', 'User berhasil dibuat!');
+        return back();
     }
 
     public function create()
@@ -75,13 +75,12 @@ class UserController extends Controller
         $user = \App\Models\User::findOrFail($id);
 
         $data = $request->validate([
-            'name'  => 'required|string|max:255',
-            // Validasi email agar unik kecuali untuk email user ini sendiri
+            'name'  => 'required|string|max:255',   
             'email' => 'required|email|unique:users,email,' . $id,
         ]);
 
         $user->update($data);
 
-        return redirect()->route('users.index')->with('success', 'Data berhasil diupdate!');
+        return back();
     }
 }
