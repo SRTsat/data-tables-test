@@ -5,6 +5,8 @@ import DT from 'datatables.net-dt';
 import 'datatables.net-select-dt';
 import $ from 'jquery';
 import Select from 'react-select';
+import 'datatables.net-responsive-dt';
+
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
