@@ -3,7 +3,7 @@ import { Head, useForm, router, Link } from '@inertiajs/react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import $ from 'jquery';
-
+import 'datatables.net-responsive-dt';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 
 DataTable.use(DT);
