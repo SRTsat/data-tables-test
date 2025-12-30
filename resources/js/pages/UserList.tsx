@@ -4,6 +4,7 @@ import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import 'datatables.net-select-dt'; // WAJIB ADA buat select
 import $ from 'jquery';
+import 'datatables.net-responsive-dt';
 
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
