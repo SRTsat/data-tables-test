@@ -4,7 +4,7 @@ import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import 'datatables.net-select-dt';
 import $ from 'jquery';
-
+import Select from 'react-select';
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
@@ -23,14 +23,25 @@ export default function UserList({ users, categories }: { users: any[], categori
         category_id: '', // Tambahan field category
     });
 
+    const categoryOptions = categories.map(cat => ({
+        value: cat.name,
+        label: cat.name
+    }));
+
     // Fungsi Filter DataTables
-    const handleFilterCategory = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const val = e.target.value;
+    const handleMultiFilter = (selectedOptions: any) => {
         const dt = tableRef.current.dt();
         
-        // Kita filter di kolom index ke-4 (Kategori)
-        // Kalau val kosong, dia nampilin semua
-        dt.column(4).search(val).draw();
+        if (!selectedOptions || selectedOptions.length === 0) {
+            // Kalau kosong, tampilkan semua
+            dt.column(4).search('').draw();
+        } else {
+            // Gabungkan pilihan jadi string regex: "Elektronik|Pakaian|Food"
+            const searchValues = selectedOptions.map((opt: any) => opt.value).join('|');
+            
+            // Tembak kolom ke-4 dengan regex aktif
+            dt.column(4).search(searchValues ? `^(${searchValues})$` : '', true, false).draw();
+        }
     };
 
     const openModal = (user: any = null) => {
@@ -56,6 +67,23 @@ export default function UserList({ users, categories }: { users: any[], categori
             put(`/users/${currentId}`, { onSuccess: () => setIsOpen(false) });
         } else {
             post('/users', { onSuccess: () => setIsOpen(false) });
+        }
+    };
+    
+    const handleBulkDelete = () => {
+        const dt = tableRef.current.dt();
+        const selectedData = dt.rows({ selected: true }).data().toArray();
+        const ids = selectedData.map((item: any) => item.id);
+
+        if (ids.length === 0) return alert('Pilih data dulu, bro!');
+
+        if (confirm(`Yakin mau hapus ${ids.length} data ini?`)) {
+            router.post('/users/bulk-delete', { ids: ids }, {
+                onSuccess: () => {
+                    alert('Berhasil dihapus!');
+                    dt.rows().deselect();
+                }
+            });
         }
     };
 
@@ -134,17 +162,50 @@ export default function UserList({ users, categories }: { users: any[], categori
                     <h2 style={{ fontSize: '28px', fontWeight: 'bold' }}>User Management</h2>
                     
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        {/* DROPDOWN FILTER */}
-                        <select 
-                            onChange={handleFilterCategory}
-                            style={{ background: '#111', color: 'white', border: '1px solid #333', padding: '10px', borderRadius: '6px', outline: 'none' }}
-                        >
-                            <option value="">Semua Kategori</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.name}>{cat.name}</option>
-                            ))}
-                        </select>
 
+                        <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+                            Hapus Terpilih
+                        </button>
+
+                        {/* MULTI-SELECT FILTER */}
+                        <div style={{ width: '300px', color: 'black' }}>
+                            <Select
+                                isMulti
+                                options={categoryOptions}
+                                placeholder="Filter Kategori..."
+                                onChange={handleMultiFilter}
+                                styles={{
+                                    control: (base) => ({
+                                        ...base,
+                                        background: '#111',
+                                        borderColor: '#333',
+                                        color: 'white',
+                                    }),
+                                    menu: (base) => ({
+                                        ...base,
+                                        background: '#111',
+                                        color: 'white',
+                                    }),
+                                    option: (base, state) => ({
+                                        ...base,
+                                        background: state.isFocused ? '#2563eb' : '#111',
+                                        color: 'white',
+                                    }),
+                                    multiValue: (base) => ({
+                                        ...base,
+                                        background: '#333',
+                                    }),
+                                    multiValueLabel: (base) => ({
+                                        ...base,
+                                        color: 'white',
+                                    }),
+                                    input: (base) => ({
+                                        ...base,
+                                        color: 'white'
+                                    })
+                                }}
+                            />
+                        </div>
                         <button onClick={() => openModal()} style={{ background: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                             + Tambah User
                         </button>
