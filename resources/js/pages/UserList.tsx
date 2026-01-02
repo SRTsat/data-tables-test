@@ -6,7 +6,10 @@ import 'datatables.net-select-dt';
 import 'datatables.net-responsive-dt';
 import $ from 'jquery';
 import Select from 'react-select';
-import UserFormModal from './UserFormModal';
+import UserFormModal from '../components/UserFormModal';
+import DataTableBase from '../components/DataTableBase';
+import MainLayout from '../components/MainLayout';
+import ActionButton from '../components/ActionButton';
 
 // CSS Imports
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
@@ -129,85 +132,50 @@ export default function UserList({ users, categories }: { users: any[], categori
     }, [users]);
 
     return (
-        <div style={{ padding: '40px', background: '#000', minHeight: '100vh', color: 'white', fontFamily: 'sans-serif' }}>
-            <Head title="User Management" />
+    <MainLayout title="User Management">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+            <h2 style={{ fontSize: '28px', fontWeight: 'bold' }}>User Management</h2>
             
-            <style>{`
-                .dataTables_wrapper { color: white !important; }
-                .dataTables_wrapper .dataTables_length select, 
-                .dataTables_wrapper .dataTables_filter input { 
-                    color: white !important; background: #111 !important; border: 1px solid #333 !important; padding: 6px !important; border-radius: 4px; outline: none;
-                }
-                table.dataTable { width: 100% !important; margin: 20px 0 !important; border-collapse: collapse !important; background: transparent !important; }
-                table.dataTable thead th { color: white !important; border-bottom: 2px solid #333 !important; text-align: left !important; padding: 15px 12px !important; background: #0a0a0a !important; }
-                table.dataTable tbody td { color: #ccc !important; border-bottom: 1px solid #1a1a1a !important; padding: 12px !important; }
-                table.dataTable tbody td.select-checkbox:before { border: 1px solid white !important; }
-            `}</style>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <ActionButton variant="danger" onClick={handleBulkDelete}>
+                    Hapus Terpilih
+                </ActionButton>
 
-            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
-                    <Link href="/users-list" style={{ color: '#60a5fa', textDecoration: 'none', fontWeight: 'bold' }}>Users</Link>
-                    <Link href="/categories" style={{ color: '#94a3b8', textDecoration: 'none' }}>Categories</Link>
-                </nav>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                    <h2 style={{ fontSize: '28px', fontWeight: 'bold' }}>User Management</h2>
-                    
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-                            Hapus Terpilih
-                        </button>
-
-                        <div style={{ width: '250px' }}>
-                            <Select
-                                isMulti
-                                options={categoryOptions}
-                                placeholder="Filter Kategori..."
-                                onChange={handleMultiFilter}
-                                styles={{
-                                    control: (base) => ({ ...base, background: '#111', borderColor: '#333', color: 'white' }),
-                                    menu: (base) => ({ ...base, background: '#111', color: 'white' }),
-                                    option: (base, state) => ({ ...base, background: state.isFocused ? '#2563eb' : '#111', color: 'white' }),
-                                    multiValue: (base) => ({ ...base, background: '#333' }),
-                                    multiValueLabel: (base) => ({ ...base, color: 'white' }),
-                                    input: (base) => ({ ...base, color: 'white' })
-                                }}
-                            />
-                        </div>
-
-                        <button onClick={() => openModal()} style={{ background: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                            + Tambah User
-                        </button>
-                    </div>
-                </div>
-
-                <div style={{ background: '#050505', padding: '25px', borderRadius: '12px', border: '1px solid #1a1a1a' }}>
-                    <DataTable 
-                        ref={tableRef}
-                        data={users} 
-                        columns={columns} 
-                        className="display" 
-                        options={{ 
-                            responsive: true, 
-                            autoWidth: false,
-                            select: { style: 'multi', selector: 'td:first-child' }
-                        }} 
+                <div style={{ width: '250px' }}>
+                    <Select 
+                        isMulti 
+                        options={categoryOptions} 
+                        onChange={handleMultiFilter} 
+                        placeholder="Filter Kategori..."
                     />
                 </div>
-            </div>
 
-            {/* KOMPONEN MODAL HASIL REFACTORING */}
-            <UserFormModal 
-                isOpen={isOpen}
-                editMode={editMode}
-                data={data}
-                setData={setData}
-                errors={errors}
-                processing={processing}
-                onSubmit={submit}
-                onClose={() => setIsOpen(false)}
-                categories={categories}
+                <ActionButton variant="primary" onClick={() => openModal()}>
+                    + Tambah User
+                </ActionButton>
+            </div>
+        </div>
+
+        <div style={{ background: '#050505', padding: '25px', borderRadius: '12px', border: '1px solid #1a1a1a' }}>
+            <DataTableBase 
+                ref={tableRef} 
+                data={users} 
+                columns={columns} 
+                options={{ select: { style: 'multi', selector: 'td:first-child' } }} 
             />
         </div>
-    );
+
+        <UserFormModal 
+            isOpen={isOpen} 
+            editMode={editMode} 
+            data={data} 
+            setData={setData} 
+            errors={errors} 
+            processing={processing} 
+            onSubmit={submit} 
+            onClose={() => setIsOpen(false)} 
+            categories={categories} 
+        />
+    </MainLayout>
+);
 }
