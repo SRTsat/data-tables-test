@@ -3,16 +3,17 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import 'datatables.net-select-dt';
+import 'datatables.net-responsive-dt';
 import $ from 'jquery';
 import Select from 'react-select';
-import 'datatables.net-responsive-dt';
+import UserFormModal from './UserFormModal';
 
+// CSS Imports
 import 'datatables.net-dt/css/dataTables.dataTables.min.css';
 import 'datatables.net-select-dt/css/select.dataTables.min.css';
 
 DataTable.use(DT);
 
-// Tambahkan 'categories' ke props yang diterima dari Controller
 export default function UserList({ users, categories }: { users: any[], categories: any[] }) {
     const tableRef = useRef<any>(null);
     const [isOpen, setIsOpen] = useState(false);
@@ -22,7 +23,7 @@ export default function UserList({ users, categories }: { users: any[], categori
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
         email: '',
-        category_id: '', // Tambahan field category
+        category_id: '',
     });
 
     const categoryOptions = categories.map(cat => ({
@@ -30,18 +31,13 @@ export default function UserList({ users, categories }: { users: any[], categori
         label: cat.name
     }));
 
-    // Fungsi Filter DataTables
+    // Filter Logic
     const handleMultiFilter = (selectedOptions: any) => {
         const dt = tableRef.current.dt();
-        
         if (!selectedOptions || selectedOptions.length === 0) {
-            // Kalau kosong, tampilkan semua
             dt.column(4).search('').draw();
         } else {
-            // Gabungkan pilihan jadi string regex: "Elektronik|Pakaian|Food"
             const searchValues = selectedOptions.map((opt: any) => opt.value).join('|');
-            
-            // Tembak kolom ke-4 dengan regex aktif
             dt.column(4).search(searchValues ? `^(${searchValues})$` : '', true, false).draw();
         }
     };
@@ -68,7 +64,7 @@ export default function UserList({ users, categories }: { users: any[], categori
         if (editMode) {
             put(`/users/${currentId}`, { onSuccess: () => setIsOpen(false) });
         } else {
-            post('/users', { onSuccess: () => setIsOpen(false) });
+            post('/users', { onSuccess: () => { setIsOpen(false); reset(); } });
         }
     };
     
@@ -90,13 +86,7 @@ export default function UserList({ users, categories }: { users: any[], categori
     };
 
     const columns = [
-        {
-            data: null,
-            defaultContent: '',
-            orderable: false,
-            className: 'select-checkbox',
-            width: '5%'
-        },
+        { data: null, defaultContent: '', orderable: false, className: 'select-checkbox', width: '5%' },
         { data: 'id', title: 'ID', width: '5%' },
         { data: 'name', title: 'Nama', width: '25%' },
         { data: 'email', title: 'Email', width: '25%' },
@@ -163,52 +153,29 @@ export default function UserList({ users, categories }: { users: any[], categori
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                     <h2 style={{ fontSize: '28px', fontWeight: 'bold' }}>User Management</h2>
                     
-                    <div style={{ display: 'flex', gap: '10px' }}>
-
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <button onClick={handleBulkDelete} style={{ background: '#ef4444', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
                             Hapus Terpilih
                         </button>
 
-                        {/* MULTI-SELECT FILTER */}
-                        <div style={{ width: '300px', color: 'black' }}>
+                        <div style={{ width: '250px' }}>
                             <Select
                                 isMulti
                                 options={categoryOptions}
                                 placeholder="Filter Kategori..."
                                 onChange={handleMultiFilter}
                                 styles={{
-                                    control: (base) => ({
-                                        ...base,
-                                        background: '#111',
-                                        borderColor: '#333',
-                                        color: 'white',
-                                    }),
-                                    menu: (base) => ({
-                                        ...base,
-                                        background: '#111',
-                                        color: 'white',
-                                    }),
-                                    option: (base, state) => ({
-                                        ...base,
-                                        background: state.isFocused ? '#2563eb' : '#111',
-                                        color: 'white',
-                                    }),
-                                    multiValue: (base) => ({
-                                        ...base,
-                                        background: '#333',
-                                    }),
-                                    multiValueLabel: (base) => ({
-                                        ...base,
-                                        color: 'white',
-                                    }),
-                                    input: (base) => ({
-                                        ...base,
-                                        color: 'white'
-                                    })
+                                    control: (base) => ({ ...base, background: '#111', borderColor: '#333', color: 'white' }),
+                                    menu: (base) => ({ ...base, background: '#111', color: 'white' }),
+                                    option: (base, state) => ({ ...base, background: state.isFocused ? '#2563eb' : '#111', color: 'white' }),
+                                    multiValue: (base) => ({ ...base, background: '#333' }),
+                                    multiValueLabel: (base) => ({ ...base, color: 'white' }),
+                                    input: (base) => ({ ...base, color: 'white' })
                                 }}
                             />
                         </div>
-                        <button onClick={() => openModal()} style={{ background: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+
+                        <button onClick={() => openModal()} style={{ background: '#2563eb', color: 'white', padding: '10px 20px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                             + Tambah User
                         </button>
                     </div>
@@ -229,41 +196,18 @@ export default function UserList({ users, categories }: { users: any[], categori
                 </div>
             </div>
 
-            {/* MODAL */}
-            {isOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
-                    <div style={{ background: '#111', padding: '30px', borderRadius: '12px', width: '450px', border: '1px solid #333' }}>
-                        <h3 style={{ marginBottom: '20px' }}>{editMode ? 'Edit User' : 'Tambah User'}</h3>
-                        <form onSubmit={submit}>
-                            <div style={{ marginBottom: '15px' }}>
-                                <label style={{ color: '#aaa', display:'block', marginBottom:'5px' }}>Nama</label>
-                                <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: 'white', borderRadius: '6px' }} />
-                            </div>
-                            <div style={{ marginBottom: '15px' }}>
-                                <label style={{ color: '#aaa', display:'block', marginBottom:'5px' }}>Email</label>
-                                <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: 'white', borderRadius: '6px' }} />
-                            </div>
-                            <div style={{ marginBottom: '25px' }}>
-                                <label style={{ color: '#aaa', display:'block', marginBottom:'5px' }}>Pilih Kategori</label>
-                                <select 
-                                    value={data.category_id} 
-                                    onChange={e => setData('category_id', e.target.value)}
-                                    style={{ width: '100%', padding: '12px', background: '#000', border: '1px solid #333', color: 'white', borderRadius: '6px' }}
-                                >
-                                    <option value="">-- Pilih Kategori --</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button type="submit" disabled={processing} style={{ flex: 1, background: '#2563eb', color: 'white', padding: '12px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Simpan</button>
-                                <button type="button" onClick={() => setIsOpen(false)} style={{ flex: 1, background: '#222', color: 'white', padding: '12px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}>Batal</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* KOMPONEN MODAL HASIL REFACTORING */}
+            <UserFormModal 
+                isOpen={isOpen}
+                editMode={editMode}
+                data={data}
+                setData={setData}
+                errors={errors}
+                processing={processing}
+                onSubmit={submit}
+                onClose={() => setIsOpen(false)}
+                categories={categories}
+            />
         </div>
     );
 }
