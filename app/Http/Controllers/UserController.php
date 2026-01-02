@@ -8,16 +8,34 @@ use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
     public function index()
     {
         return Inertia::render('UserList', [
-            // 'with' biar data kategorinya kebawa (Eager Loading)
-            'users' => User::with('category')->get(),
             'categories' => Category::all()
         ]);
+    }
+
+    public function getData(Request $request)
+    {
+        // 1. Ambil Query Dasar
+        $query = User::with('category')->select('users.*');
+
+        // 2. Filter Manual sebelum masuk ke DataTables::of
+        if ($request->filled('categories')) {
+            $categoryList = explode(',', $request->categories);
+            $query->whereHas('category', function ($q) use ($categoryList) {
+                $q->whereIn('name', $categoryList);
+            });
+        }
+
+        // 3. Masukkan ke Yajra
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->make(true);
     }
 
     public function destroy($id)
