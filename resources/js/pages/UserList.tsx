@@ -150,7 +150,13 @@ export default function UserList({ users, categories }: { users: any[], categori
                     />
                 </div>
 
-                <ActionButton variant="primary" onClick={() => openModal()}>
+               <ActionButton variant="primary" onClick={() => {
+                    reset(); // Reset state useForm ke awal
+                    setData({ name: '', email: '', category_id: '' }); // Force empty
+                    setEditMode(false);
+                    setCurrentId(null);
+                    setIsOpen(true);
+                }}>
                     + Tambah User
                 </ActionButton>
             </div>
